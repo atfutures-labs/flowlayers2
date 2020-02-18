@@ -1,0 +1,15 @@
+^aaa\.Rmd$
+^README\.*
+^\.travis\.yml$
+^README\.md$
+^makefile$
+accra/
+bristol/
+code/
+kathmandu/
+^_pkgdown\.yml$
+^appveyor\.yml$
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.pbattributes$
+^\.manifest\.json$

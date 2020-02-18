@@ -1,0 +1,23 @@
+.Rproj.user
+.Rhistory
+.RData
+inst/doc
+# History files
+.Rapp.history
+# Session Data files
+# Output files from R CMD build
+/*.tar.gz
+# vim files
+.*.un~
+.*.swp
+# compiled object files
+*.o
+*.so
+.manifest.json
+accra/popdens/*.zip
+kathmandu/popdens/*zip
+accra/popdens/*.tif
+kathmandu/popdens/*tif
+accra/osm/*.Rds
+bristol/osm/*.Rds
+kathmandu/osm/*.Rds

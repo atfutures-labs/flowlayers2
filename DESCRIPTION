@@ -1,0 +1,31 @@
+Package: flowlayers2
+Title: ATFutures development package
+Version: 0.0.1
+Authors@R: c(
+  person("Mark", "Padgham", email="mark.padgham@email.com", role=c("aut", "cre"))
+  )
+Description: WHO metapackage for generating layers of pedestrian flows.
+Imports:
+    dodgr,
+    dplyr,
+    geodist,
+    here,
+    jsonlite,
+    magrittr,
+    methods,
+    osmdata,
+    piggyback,
+    raster,
+    rgdal,
+    sf,
+    sp,
+    spatstat,
+    tibble
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Suggests:
+    knitr,
+    testthat
+VignetteBuilder: knitr
+RoxygenNote: 7.0.2
