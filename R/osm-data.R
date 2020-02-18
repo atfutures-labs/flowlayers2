@@ -1,4 +1,4 @@
-#' get_who_streets
+#' get_osm_streets
 #'
 #' Extract OSM streets for given location (\code{city}), and save them in the
 #' data directory
@@ -12,7 +12,7 @@
 #' be stored and easily \code{rbind}-ed back together on loading.
 #'
 #' @export
-get_who_streets <- function (city = "kathmandu", n = 1)
+get_osm_streets <- function (city = "kathmandu", n = 1)
 {
     is_sf_loaded ()
     region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
@@ -40,14 +40,14 @@ get_who_streets <- function (city = "kathmandu", n = 1)
 
     for (i in seq (indx))
     {
-        write_who_data (dat [indx [[i]], ], city = city, suffix = "hw",
+        write_osm_data (dat [indx [[i]], ], city = city, suffix = "hw",
                         n = np [i])
     }
 
     invisible (dat)
 }
 
-#' get_who_buildings
+#' get_osm_buildings
 #'
 #' Extract OSM buildings for given location (\code{city}), and save them in the
 #' data directory
@@ -56,7 +56,7 @@ get_who_streets <- function (city = "kathmandu", n = 1)
 #' @return The \pkg{sf}-formatted data object (invisibly)
 #'
 #' @export
-get_who_buildings <- function (city = "kathmandu", n = 1)
+get_osm_buildings <- function (city = "kathmandu", n = 1)
 {
     is_sf_loaded ()
     region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
@@ -96,7 +96,7 @@ get_who_buildings <- function (city = "kathmandu", n = 1)
         dat <- dat_full
         dat$osm_polygons <- dat$osm_polygons [indx1 [[i]], ]
         dat$osm_multipolygons <- dat$osm_multipolygons [indx2 [[i]], ]
-        write_who_data (dat, city = city, suffix = "bldg", n = np [i])
+        write_osm_data (dat, city = city, suffix = "bldg", n = np [i])
     }
 
     invisible (dat_full)
@@ -137,7 +137,7 @@ get_bus_polygon_centroids <- function (dat)
     return (xy)
 }
 
-#' get_who_busstops
+#' get_osm_busstops
 #'
 #' Extract OSM bus stops for given location (\code{city}), and save them in the
 #' data directory. Note that coordinates only are extracted, because some bus
@@ -147,7 +147,7 @@ get_bus_polygon_centroids <- function (dat)
 #' @return The \pkg{sf}-formatted data object (invisibly)
 #'
 #' @export
-get_who_busstops <- function (city = "kathmandu")
+get_osm_busstops <- function (city = "kathmandu")
 {
     region_shape <- osmdata::getbb(place_name = city, format_out = "polygon")
     if (is.list (region_shape))
@@ -176,23 +176,23 @@ get_who_busstops <- function (city = "kathmandu")
     dat <- c (dat1$geometry, dat2$geometry, dat3, dat4)
     dat <- dat [!duplicated (dat)]
 
-    write_who_data (dat, city = city, suffix = "bus")
+    write_osm_data (dat, city = city, suffix = "bus")
 
     invisible (dat)
 }
 
 # n is a number appended to file name when divided into chunks
-write_who_data <- function (dat, city, suffix, n = NULL)
+write_osm_data <- function (dat, city, suffix, n = NULL)
 {
     nm <- paste0 (city, "_", suffix, n)
     assign (nm, dat)
-    data_dir <- get_who_data_dir (city = city)
+    data_dir <- get_osm_data_dir (city = city)
     fname <- file.path (data_dir, paste0 (city, "-", suffix, n, ".Rds"))
     saveRDS (get (nm), fname)
     message ("saved ", fname)
 }
 
-#' get_who_data_dir
+#' get_osm_data_dir
 #'
 #' Find the "who-data" directory corresponding to the "who" directory of this
 #' project, and the sub-directory within that corresponding to the OSM data of
@@ -203,9 +203,9 @@ write_who_data <- function (dat, city, suffix, n = NULL)
 #'
 #' This assumes this repo ("who") sits in the same root directory as the
 #' corresponding one named "who-data". The latter is where the function
-#' \code{get_who_data} stores data.
+#' \code{get_osm_data} stores data.
 #' @noRd
-get_who_data_dir <- function (city)
+get_osm_data_dir <- function (city)
 {
     dh <- file.path (here::here (), city)
     if (!file.exists (dh))
@@ -234,48 +234,4 @@ is_sf_loaded <- function ()
     if (!any (grepl ("package:sf", search ())))
         message ("It is generally necessary to pre-load the sf package ",
                  "for this functions to work correctly")
-}
-
-#' osm_files
-#' List all OSM files
-#' @export
-osm_files <- function ()
-{
-    cities <- who_cities ()
-    types <- c ("bldg", "bus", "hw")
-    cities <- rep (cities, each = 3)
-    file.path (cities, "osm", paste0 (cities, "-", types, ".Rds"))
-}
-
-#' upload_osm
-#'
-#' upload the worldpop tif files to repo via piggyback
-#' @export
-upload_osm <- function ()
-{
-    flist <- osm_files ()
-    piggyback::pb_track (c ("accra/osm/*.Rds",
-                            "bristol/osm/*.Rds",
-                            "kathmandu/osm/*.Rds"))
-    junk <- lapply (flist, function (i)
-                    {
-                        message ("uploading ", i)
-                        piggyback::pb_upload (i, repo = "ATFutures/who-data",
-                                      tag = "v0.0.3-osmdata")
-                    })
-}
-
-#' download_osm
-#'
-#' download the worldpop tif files from repo via piggyback
-#' @export
-download_osm <- function ()
-{
-    flist <- osm_files ()
-    junk <- lapply (flist, function (i)
-                    {
-                        message ("downloading ", i)
-                        piggyback::pb_download (i, repo = "ATFutures/who-data",
-                                        tag = "v0.0.3-osmdata")
-                    })
 }
