@@ -13,3 +13,4 @@ kathmandu/
 ^\.Rproj\.user$
 ^\.pbattributes$
 ^\.manifest\.json$
+^\.github/workflows/R-CMD-check\.yaml$
