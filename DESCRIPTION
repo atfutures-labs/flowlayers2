@@ -1,5 +1,5 @@
 Package: flowlayers2
-Title: ATFutures development package
+Title: ATFutures Development Package
 Version: 0.0.1
 Authors@R: c(
   person("Mark", "Padgham", email="mark.padgham@email.com", role=c("aut", "cre"))
@@ -10,24 +10,14 @@ Imports:
     dplyr,
     geodist,
     here,
-    jsonlite,
     magrittr,
-    methods,
     osmdata,
-    piggyback,
-    raster,
-    rgdal,
     sf,
-    sp,
     spatstat,
     tibble
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Suggests:
-    knitr,
-    testthat
 URL: https://github.com/ATFutures-labs/flowlayers2
 BugReports: https://github.com/ATFutures-labs/flowlayers2/issues
-VignetteBuilder: knitr
 RoxygenNote: 7.0.2
