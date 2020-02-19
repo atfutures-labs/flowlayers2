@@ -8,13 +8,13 @@
 #' @usage lhs \%>\% rhs
 NULL
 
-#' who3_bp
+#' get_bp
 #'
-#' get bounding polygons for WHO3 cities (Accra, Kathmandu)
+#' get bounding polygons for cities (Accra, Kathmandu)
 #' @param city Name of city for which to obtain bounding polygon
 #' @return Matrix of coordinates of bounding polygon
 #' @export
-who3_bp <- function (city) {
+get_bp <- function (city) {
     cities <- c ("accra", "kathmandu", "bristol")
     chk <- vapply (cities, function (i) grepl (i, city), logical (1))
     if (!any (chk))
@@ -56,12 +56,12 @@ who3_bp <- function (city) {
 
 #' Get street network for WHO# cities (Accra and Kathmandu)
 #'
-#' @inheritParams who3_bp
+#' @inheritParams get_bp
 #' @param save If `TRUE`, save data to internal `who-data` directory.
 #' @param quiet If `FALSE`, display progress information on screen.
 #' @return SC-formatted street network for nominated city.
 #' @export
-who3_network <- function (city, save = TRUE, quiet = FALSE) {
+osm_street_network <- function (city, save = TRUE, quiet = FALSE) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
 
@@ -70,7 +70,7 @@ who3_network <- function (city, save = TRUE, quiet = FALSE) {
     if (file.exists (f))
         hw <- readRDS (f)
     else {
-        hw <- who3_network_internal (city, quiet = quiet)
+        hw <- osm_street_network_internal (city, quiet = quiet)
         if (save) {
             if (!file.exists (d))
                 dir.create (d, recursive = TRUE)
@@ -80,8 +80,8 @@ who3_network <- function (city, save = TRUE, quiet = FALSE) {
     return (hw)
 }
 
-who3_network_internal <- function (city, quiet = FALSE) {
-    bp <- who3_bp (city)
+osm_street_network_internal <- function (city, quiet = FALSE) {
+    bp <- get_bp (city)
 
     if (grepl ("accra", city))
         city <- "Greater Accra Region"
@@ -107,13 +107,13 @@ who3_network_internal <- function (city, quiet = FALSE) {
     return (hw)
 }
 
-#' who3_centrality
+#' streetnet_centrality
 #'
-#' @inheritParams who3_network
+#' @inheritParams osm_street_network
 #' @return A \pkg{dodgr} representation of the street network with a centrality
 #' column calculated from time-based weighting for motorcar transport.
 #' @export
-who3_centrality <- function (city, save = TRUE, quiet = FALSE) {
+streetnet_centrality <- function (city, save = TRUE, quiet = FALSE) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
 
@@ -122,7 +122,7 @@ who3_centrality <- function (city, save = TRUE, quiet = FALSE) {
     if (file.exists (f))
         net <- readRDS (f)
     else {
-        net <- who3_centrality_internal (city, save = save, quiet = quiet)
+        net <- streetnet_centrality_internal (city, save = save, quiet = quiet)
         if (save) {
             if (!file.exists (d))
                 dir.create (d, recursive = TRUE)
@@ -134,14 +134,14 @@ who3_centrality <- function (city, save = TRUE, quiet = FALSE) {
     return (net)
 }
 
-who3_centrality_internal <- function (city, save = TRUE, quiet = FALSE) {
+streetnet_centrality_internal <- function (city, save = TRUE, quiet = FALSE) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     f <- file.path (here::here(), city_dir, "osm",
                     paste0 (city_dir, "-hw-sc.Rds"))
     if (!file.exists (f))
         stop ("File [", f, "] does not exist;\nplease first run ",
-              "'who3-network' to download street network data")
+              "'osm_street_network-network' to download street network data")
     hw <- readRDS (f)
     if (!quiet)
         message ("Preparing street network ... ", appendLF = FALSE)
@@ -167,11 +167,11 @@ who3_centrality_internal <- function (city, save = TRUE, quiet = FALSE) {
     return (net)
 }
 
-#' who3_buildings
+#' osm_buildings
 #'
-#' @inheritParams who3_network
+#' @inheritParams osm_street_network
 #' @export
-who3_buildings <- function (city, save = TRUE, quiet = FALSE) {
+osm_buildings <- function (city, save = TRUE, quiet = FALSE) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     f <- file.path (here::here(), city_dir, "osm", paste0 (city_dir, "-bldg.Rds"))
@@ -188,7 +188,7 @@ who3_buildings <- function (city, save = TRUE, quiet = FALSE) {
             b <- readRDS (f)
             save <- FALSE
         } else
-            b <- who3_building_internal (city, save, quiet)
+            b <- osm_building_internal (city, save, quiet)
         if (save) {
             dname <- file.path (here::here(), tolower (city_dir), "osm")
             fname <- file.path (dname, paste0 (tolower (city_dir), "-bldg.Rds"))
@@ -210,7 +210,7 @@ who3_buildings <- function (city, save = TRUE, quiet = FALSE) {
     if (!quiet)
         message ("mapping buildings to street network junctions ... ",
                  appendLF = FALSE)
-    net <- who3_network (city) %>%
+    net <- osm_street_network (city) %>%
         dodgr::weight_streetnet (wt_profile = "foot") %>%
         dodgr::dodgr_contract_graph ()
     v <- dodgr::dodgr_vertices (net)
@@ -229,8 +229,8 @@ who3_buildings <- function (city, save = TRUE, quiet = FALSE) {
     return (bldg)
 }
 
-who3_building_internal <- function (city, save = TRUE, quiet = FALSE) {
-    bp <- who3_bp (city)
+osm_building_internal <- function (city, save = TRUE, quiet = FALSE) {
+    bp <- get_bp (city)
     bldg <- osmdata::opq (bbox = city) %>%
         osmdata::add_osm_feature (key = "building") %>%
         osmdata::osmdata_sf (quiet = quiet) %>%
@@ -238,12 +238,12 @@ who3_building_internal <- function (city, save = TRUE, quiet = FALSE) {
     return (bldg)
 }
 
-#' who3_bus_network
+#' osm_bus_network
 #'
-#' Get bus network data for WHO3 cities (Accra, Kathmandu).
-#' @inheritParams who3_network
+#' Get bus network data for cities (Accra, Kathmandu).
+#' @inheritParams osm_street_network
 #' @export
-who3_bus_network <- function (city) {
+osm_bus_network <- function (city) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     d <- file.path (here::here(), city_dir, "osm")
@@ -282,17 +282,17 @@ who3_bus_network <- function (city) {
     return (net)
 }
 
-#' who3_bus_stops
+#' osm_bus_stops
 #'
-#' Get bus stop data for WHO3 cities (Accra, Kathmandu).
-#' @inheritParams who3_network
+#' Get bus stop data for cities (Accra, Kathmandu).
+#' @inheritParams osm_street_network
 #' @export
-who3_bus_stops <- function (city, save = TRUE) {
+osm_bus_stops <- function (city, save = TRUE) {
     # Accra includes the bus stops within the network, Kathmandu does not
     if (grepl ("accra", city, ignore.case = TRUE)) {
         f <- file.path (here::here(), "accra", "osm", "accra-bus-net.Rds")
         if (!file.exists (f))
-            net <- who3_bus_network (city = "accra")
+            net <- osm_bus_network (city = "accra")
         net <- readRDS (f)
 
         type <- role <- NULL # suppress no visible binding notes
@@ -307,7 +307,7 @@ who3_bus_stops <- function (city, save = TRUE) {
                                 stringsAsFactors = FALSE)
 
         # remove stops beyond the bounding polygon:
-        p <- who3_bp ("Accra")
+        p <- get_bp ("Accra")
         p <- sf::st_polygon (list (p)) %>%
             sf::st_sfc (crs = 4326) %>%
             sf::st_sf ()
@@ -323,7 +323,7 @@ who3_bus_stops <- function (city, save = TRUE) {
         bus_stops <- b$osm_points [b$osm_points$public_transport %in%
                                    stop_types, ]
         # remove all stops beyond the bounding polygon:
-        p <- who3_bp ("Kathmandu")
+        p <- get_bp ("Kathmandu")
         p <- sf::st_polygon (list (p)) %>%
             sf::st_sfc (crs = 4326) %>%
             sf::st_sf ()
@@ -343,15 +343,15 @@ who3_bus_stops <- function (city, save = TRUE) {
     return (bus_stops)
 }
 
-#' who3_bus_centrality
+#' osm_bus_centrality
 #'
-#' Calculate centrality of bus networks for WHO3 cities, and assign vertex
+#' Calculate centrality of bus networks for cities, and assign vertex
 #' centrality values to each bus stop, in order to use these as proxies for
 #' numbers of passengers.
 #'
-#' @inheritParams who3_network
+#' @inheritParams osm_street_network
 #' @export
-who3_bus_centrality <- function (city) {
+osm_bus_centrality <- function (city) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     d <- file.path (here::here(), city_dir, "flows")
@@ -359,7 +359,7 @@ who3_bus_centrality <- function (city) {
     if (!file.exists (f)) {
         message ("Centrality file [", f, "] does not exist;\n",
                  "calculating centrality ... ", appendLF = FALSE)
-        bus <- who3_bus_centrality_internal (city)
+        bus <- osm_bus_centrality_internal (city)
         message ("Calculating centrality ... done")
         if (!file.exists (d))
             dir.create (d, recursive = TRUE)
@@ -369,9 +369,9 @@ who3_bus_centrality <- function (city) {
     return (bus)
 }
 
-who3_bus_centrality_internal <- function (city) {
-    net <- who3_bus_network (city)
-    bus_stops <- who3_bus_stops (city)
+osm_bus_centrality_internal <- function (city) {
+    net <- osm_bus_network (city)
+    bus_stops <- osm_bus_stops (city)
     dodgr::dodgr_cache_off ()
     net <- dodgr::weight_streetnet (net, wt_profile = 1)
     # re-map bus stop vertices to network:
@@ -426,19 +426,19 @@ who3_bus_centrality_internal <- function (city) {
     return (bus)
 }
 
-#' who3_flow
+#' network_flow
 #'
-#' Generate pedestrian flows for one WHO3 city (Accra, Kathmandu).
-#' @inheritParams who3_network
+#' Generate pedestrian flows for one city (Accra, Kathmandu).
+#' @inheritParams osm_street_network
 #' @export
-who3_flow <- function (city, save = TRUE, quiet = FALSE) {
+network_flow <- function (city, save = TRUE, quiet = FALSE) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     d <- file.path (here::here(), city_dir, "flows")
     f <- file.path (d, paste0 (city_dir, "-flows.Rds"))
     fsf <- file.path (d, paste0 (city_dir, "-flows-sf.Rds"))
     if (!(file.exists (f) & file.exists (fsf))) {
-        res <- who3_flow_internal (city, quiet = quiet)
+        res <- network_flow_internal (city, quiet = quiet)
         net <- res$net
         netsf <- res$netsf
         if (save) {
@@ -454,8 +454,8 @@ who3_flow <- function (city, save = TRUE, quiet = FALSE) {
     return (list (net = net, netsf = netsf))
 }
 
-who3_flow_internal <- function (city, quiet = FALSE) {
-    hw <- who3_network (city)
+network_flow_internal <- function (city, quiet = FALSE) {
+    hw <- osm_street_network (city)
     dodgr::dodgr_cache_off ()
     if (!quiet)
         message ("Preparing street network ... ", appendLF = FALSE)
@@ -465,7 +465,7 @@ who3_flow_internal <- function (city, quiet = FALSE) {
         message ("\rPreparing street network ... done")
 
     # ----- dispersal from bus stops:
-    bus <- who3_bus_centrality (city)
+    bus <- osm_bus_centrality (city)
     # convert density of bus centrality using NYC calibration values
     bus$flow <- 125000 * bus$flow / max (bus$flow)
     if (!quiet)
@@ -482,7 +482,7 @@ who3_flow_internal <- function (city, quiet = FALSE) {
                  " bus stops in ", st [3], " seconds")
 
     # ----- dispersal from buildings
-    b <- who3_buildings (city, quiet = quiet)
+    b <- osm_buildings (city, quiet = quiet)
     # Standardise densities of buildings at intersections according to values
     # from NYC calibration of 200 pedestrians per day per building. What is
     # unknown is total number of buildings for each city, so values are
@@ -536,15 +536,15 @@ who3_flow_internal <- function (city, quiet = FALSE) {
     return (list (net = net1, netsf = netsf))
 }
 
-#' who3_disperse_centrality
+#' network_disperse_centrality
 #'
 #' Take a network with centrality column, disperse values away from network
 #' edges, and map onto pedestrian network.
-#' @inheritParams who3_network
+#' @inheritParams osm_street_network
 #' @param disperse_width Width in metres defining Gaussian dispersal of
 #' vehicular emissions.
 #' @export
-who3_disperse_centrality <- function (city, disperse_width = 200) {
+network_disperse_centrality <- function (city, disperse_width = 200) {
     city <- tolower (city)
     city_dir <- gsub ("\\s.*", "", city) # take just first bit before spaces
     message ("Preparing networks ... ", appendLF = FALSE)
@@ -553,7 +553,7 @@ who3_disperse_centrality <- function (city, disperse_width = 200) {
                        paste0 (city_dir, "-flows.Rds"))
     if (!file.exists (fnet))
         stop ("Flow file [", fnet, "] not found;\n",
-              "please first run 'who3_flow'", call. = FALSE)
+              "please first run 'network_flow'", call. = FALSE)
     netf <- readRDS (fnet)
     if (grepl ("accra", city)) {
         # remove osm_id: 390798097 which is a motorway with alleged bus stops
@@ -565,7 +565,7 @@ who3_disperse_centrality <- function (city, disperse_width = 200) {
                         paste0 (city_dir, "-centrality-edge.Rds"))
     if (!file.exists (fcent))
         stop ("Flow file [", fcent, "] not found;\n",
-              "please first run 'who3_centrality'", call. = FALSE)
+              "please first run 'streetnet_centrality'", call. = FALSE)
     cent <- readRDS (fcent)
     cent$centrality <- cent$centrality / max (cent$centrality)
 
